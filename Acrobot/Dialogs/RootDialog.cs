@@ -4,6 +4,8 @@ using Microsoft.Bot.Builder.Luis.Models;
 using Microsoft.ProjectOxford.Text.Sentiment;
 using System;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights;
+using System.Collections.Generic;
 
 namespace Acrobot.Dialogs
 {
@@ -12,6 +14,12 @@ namespace Acrobot.Dialogs
     public class RootDialog : LuisDialog<object>
     {
         string cognitiveServicesKey = "beb52f8948964337abf9fbb920fd7773";
+
+        // add acronym to telemetry
+        // TelemetryClient is not Serializable but is in a class
+        // marked [Serializable] so it must be marked as [NonSerialized]
+        [NonSerialized()]
+        private TelemetryClient telemetry = new TelemetryClient();
 
         [LuisIntent("")]
         [LuisIntent("None")]
@@ -47,10 +55,16 @@ namespace Acrobot.Dialogs
         public async Task Find(IDialogContext context, LuisResult result)
         {
             // get the acronym entity
-            EntityRecommendation acronymEntityRecommendation;
-
-            if(result.TryFindEntity("acronym", out acronymEntityRecommendation))
+            if(result.TryFindEntity("acronym", out EntityRecommendation acronymEntityRecommendation))
             {
+                // add acronym to telemetry so we can track it
+                // Set up some properties and metrics:
+                // Properties - String values that you can use to filter 
+                // your telemetry in the usage reports.
+                // Metrics - Numeric values that can be presented graphically
+                var props = new Dictionary<string, string> { { "acronym", acronymEntityRecommendation.Entity } };
+                telemetry.TrackEvent("FindAcronym", properties: props);
+
                 // assign acronym to user data so the AcronymDialog can access it
                 context.UserData.SetValue<string>("Acronym", acronymEntityRecommendation.Entity.ToUpper());
                 context.Call(new AcronymDialog(), DialogResumeAfter);
@@ -68,11 +82,8 @@ namespace Acrobot.Dialogs
         public async Task Create(IDialogContext context, LuisResult result)
         {
             // get entities
-            EntityRecommendation acronymEntityRecommendation;
-            EntityRecommendation definitionEntityRecommendation;
-
-            if (result.TryFindEntity("acronym", out acronymEntityRecommendation) && 
-                result.TryFindEntity("definition", out definitionEntityRecommendation))
+            if (result.TryFindEntity("acronym", out EntityRecommendation acronymEntityRecommendation) && 
+                result.TryFindEntity("definition", out EntityRecommendation definitionEntityRecommendation))
             {
                 // assign entities to user data so the CreateDialog can access them
                 context.UserData.SetValue<string>("Acronym", acronymEntityRecommendation.Entity.ToUpper());

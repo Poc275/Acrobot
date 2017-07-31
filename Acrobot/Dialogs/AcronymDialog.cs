@@ -12,11 +12,10 @@ namespace Acrobot.Dialogs
     {
         public async Task StartAsync(IDialogContext context)
         {
-            var acronym = "";
             List<string> results;
 
             // get acronym the user is searching for
-            context.UserData.TryGetValue<string>("Acronym", out acronym);
+            context.UserData.TryGetValue<string>("Acronym", out string acronym);
             await context.PostAsync($"Searching for { acronym } ...");
 
             // query db for acronym definition

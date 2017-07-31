@@ -36,9 +36,11 @@ namespace Acrobot.Dialogs
             {
                 // user said yes, add the definition to the db
                 Models.AcronymDBEntities db = new Models.AcronymDBEntities();
-                Models.Acronym newAcronym = new Models.Acronym();
-                newAcronym.Acronym1 = acronym;
-                newAcronym.Definition = definition;
+                Models.Acronym newAcronym = new Models.Acronym()
+                {
+                    Acronym1 = acronym,
+                    Definition = definition
+                };
                 db.Acronyms.Add(newAcronym);
                 db.SaveChanges();
 
