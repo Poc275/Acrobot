@@ -187,6 +187,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>AcronymData.edmx</DependentUpon>
     </Compile>
+    <Compile Include="Models\RoomBooking.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

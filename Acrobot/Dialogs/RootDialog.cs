@@ -6,6 +6,9 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
 using System.Collections.Generic;
+using Microsoft.Bot.Builder.FormFlow;
+using Acrobot.Models;
+using Microsoft.Bot.Connector;
 
 namespace Acrobot.Dialogs
 {
@@ -95,6 +98,92 @@ namespace Acrobot.Dialogs
                 await context.PostAsync("I couldn't find the acronym or definition to create. " +
                     "Try something like 'TLA stands for Three Letter Acronym'");
             }
+        }
+
+
+        [LuisIntent("bookConfRoom")]
+        public async Task BookConferenceRoom(IDialogContext context, LuisResult result)
+        {
+            IDialog<RoomBooking> roomBookingDialog = MakeRootDialog();
+            context.Call(roomBookingDialog, RoomBookingComplete);
+        }
+
+
+        // creates RoomBooking form flow
+        internal static IDialog<RoomBooking> MakeRootDialog()
+        {
+            // note PromptInStart immediately starts the form flow
+            return Chain.From(() => FormDialog.FromForm(RoomBooking.BuildForm));
+        }
+
+        
+        // after RoomBooking has finished
+        private async Task RoomBookingComplete(IDialogContext context, IAwaitable<RoomBooking> result)
+        {
+            RoomBooking booking = null;
+
+            try
+            {
+                booking = await result;
+            }
+            catch(OperationCanceledException)
+            {
+                await context.PostAsync("Booking cancelled");
+                return;
+            }
+
+            if(booking != null)
+            {
+                // TODO - search for conference room availability...
+                // as an example send a couple of possible rooms
+                var reply = context.MakeMessage();
+                List<Attachment> cards = new List<Attachment>();
+
+                var confRoomOne = new ThumbnailCard
+                {
+                    Title = "Focus",
+                    Subtitle = "9001 Building, D-Site, Derby",
+                    Text = "Seats 12 with projector, whiteboard, network access, and audio conferencing facilities",
+                    Buttons = new List<CardAction> { new CardAction(ActionTypes.PostBack, "Select", value: "Focus") },
+                    Images = new List<CardImage> { new CardImage("https://www.discountmagnet.com/media/Blog%20Post%20Images/clean-design-conference-room.jpg", 
+                                                   null, 
+                                                   new CardAction(ActionTypes.ShowImage, value: "https://www.discountmagnet.com/media/Blog%20Post%20Images/clean-design-conference-room.jpg")) }
+                };
+
+                var confRoomTwo = new ThumbnailCard
+                {
+                    Title = "Integrity",
+                    Subtitle = "9001 Building, D-Site, Derby",
+                    Text = "Seats 4 with projector, audio conferencing and network access facilities",
+                    Buttons = new List<CardAction> { new CardAction(ActionTypes.PostBack, "Select", value: "Integrity") },
+                    Images = new List<CardImage> { new CardImage("https://c1.staticflickr.com/8/7540/16011025026_224f07771c_b.jpg",
+                                                   null,
+                                                   new CardAction(ActionTypes.OpenUrl, value: "https://c1.staticflickr.com/8/7540/16011025026_224f07771c_b.jpg")) }
+                };
+
+                cards.Add(confRoomTwo.ToAttachment());
+                cards.Add(confRoomOne.ToAttachment());
+
+                reply.AttachmentLayout = AttachmentLayoutTypes.Carousel;
+                reply.Attachments = cards;
+
+                await context.PostAsync("I've found 2 possible rooms for you");
+                await context.PostAsync(reply);
+
+                //await context.PostAsync("Your Room Booking: " + booking.ToString());
+                context.Wait(MeetingRoomConfirmed);
+            }
+            else
+            {
+                await context.PostAsync("Form returned empty response, booking cancelled");
+            }
+        }
+
+        private async Task MeetingRoomConfirmed(IDialogContext context, IAwaitable<IMessageActivity> result)
+        {
+            var message = await result;
+            await context.PostAsync($"{ message.Text } meeting room booked, thank you for using the booking room service");
+            context.Done("done");
         }
 
 
