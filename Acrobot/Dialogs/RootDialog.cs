@@ -21,8 +21,8 @@ namespace Acrobot.Dialogs
         // add acronym to telemetry
         // TelemetryClient is not Serializable but is in a class
         // marked [Serializable] so it must be marked as [NonSerialized]
-        [NonSerialized()]
-        private TelemetryClient telemetry = new TelemetryClient();
+        //[NonSerialized()]
+        //private TelemetryClient telemetry = new TelemetryClient();
 
         [LuisIntent("")]
         [LuisIntent("None")]
@@ -66,6 +66,7 @@ namespace Acrobot.Dialogs
                 // your telemetry in the usage reports.
                 // Metrics - Numeric values that can be presented graphically
                 var props = new Dictionary<string, string> { { "acronym", acronymEntityRecommendation.Entity } };
+                TelemetryClient telemetry = new TelemetryClient();
                 telemetry.TrackEvent("FindAcronym", properties: props);
 
                 // assign acronym to user data so the AcronymDialog can access it
