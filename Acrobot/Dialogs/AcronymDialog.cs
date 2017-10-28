@@ -12,7 +12,7 @@ namespace Acrobot.Dialogs
     {
         public async Task StartAsync(IDialogContext context)
         {
-            List<string> results;
+            List<Models.Acronym> results;
 
             // get acronym the user is searching for
             context.UserData.TryGetValue<string>("Acronym", out string acronym);
@@ -24,7 +24,7 @@ namespace Acrobot.Dialogs
             if(results.Count == 1)
             {
                 // single result - just return the definition
-                await context.PostAsync(results[0]);
+                await context.PostAsync(results[0].Definition);
             }
             else if(results.Count > 1)
             {
@@ -32,12 +32,22 @@ namespace Acrobot.Dialogs
                 var reply = context.MakeMessage();
                 List<Attachment> cards = new List<Attachment>();
 
-                foreach (var definition in results)
+                foreach (var acronymResult in results)
                 {
+                    List<CardAction> cardButtons = new List<CardAction>();
+                    CardAction duplicateButton = new CardAction()
+                    {
+                        Value = "Duplicate: " + acronymResult.Id,
+                        Type = ActionTypes.ImBack,
+                        Title = "Duplicated?",
+                    };
+                    cardButtons.Add(duplicateButton);
+
                     var card = new ThumbnailCard
                     {
                         Title = acronym,
-                        Text = definition
+                        Text = acronymResult.Definition,
+                        Buttons = cardButtons
                     };
 
                     cards.Add(card.ToAttachment());
@@ -51,6 +61,7 @@ namespace Acrobot.Dialogs
             }
             else
             {
+                // TODO: Open a Google search for that acronym
                 await context.PostAsync("I'm sorry, I don't know what that means. " +
                     "If you find out let me know with something like 'TLA means Three Letter Acronym'");
             }
@@ -60,14 +71,14 @@ namespace Acrobot.Dialogs
 
 
         // function that searches the acronym db
-        private List<string> GetAcronymDefinition(string acronym)
+        private List<Models.Acronym> GetAcronymDefinition(string acronym)
         {
-            List<string> definitions = new List<string>();
+            List<Models.Acronym> definitions = new List<Models.Acronym>();
             Models.AcronymDBEntities db = new Models.AcronymDBEntities();
 
             var query = (from Acronyms in db.Acronyms
                          where Acronyms.Acronym1 == acronym
-                         select Acronyms.Definition);
+                         select Acronyms);
 
             foreach (var definition in query)
             {

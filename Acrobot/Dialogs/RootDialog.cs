@@ -1,14 +1,11 @@
-﻿using Microsoft.Bot.Builder.Dialogs;
+﻿using Microsoft.ApplicationInsights;
+using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Luis;
 using Microsoft.Bot.Builder.Luis.Models;
 using Microsoft.ProjectOxford.Text.Sentiment;
 using System;
-using System.Threading.Tasks;
-using Microsoft.ApplicationInsights;
 using System.Collections.Generic;
-using Microsoft.Bot.Builder.FormFlow;
-using Acrobot.Models;
-using Microsoft.Bot.Connector;
+using System.Threading.Tasks;
 
 namespace Acrobot.Dialogs
 {
@@ -17,12 +14,6 @@ namespace Acrobot.Dialogs
     public class RootDialog : LuisDialog<object>
     {
         string cognitiveServicesKey = "beb52f8948964337abf9fbb920fd7773";
-
-        // add acronym to telemetry
-        // TelemetryClient is not Serializable but is in a class
-        // marked [Serializable] so it must be marked as [NonSerialized]
-        [NonSerialized()]
-        private TelemetryClient telemetry = new TelemetryClient();
 
         [LuisIntent("")]
         [LuisIntent("None")]
@@ -57,6 +48,12 @@ namespace Acrobot.Dialogs
         [LuisIntent("find")]
         public async Task Find(IDialogContext context, LuisResult result)
         {
+            // add acronym to telemetry
+            // TelemetryClient is not Serializable but is in a class
+            // marked [Serializable] so it must be marked as [NonSerialized]
+            //[NonSerialized()]
+            TelemetryClient telemetry = new TelemetryClient();
+
             // get the acronym entity
             if(result.TryFindEntity("acronym", out EntityRecommendation acronymEntityRecommendation))
             {
@@ -101,89 +98,42 @@ namespace Acrobot.Dialogs
         }
 
 
-        [LuisIntent("bookConfRoom")]
-        public async Task BookConferenceRoom(IDialogContext context, LuisResult result)
+        // Tag an acronym as duplicate
+        [LuisIntent("duplicate")]
+        public async Task Duplicate(IDialogContext context, LuisResult result)
         {
-            IDialog<RoomBooking> roomBookingDialog = MakeRootDialog();
-            context.Call(roomBookingDialog, RoomBookingComplete);
-        }
-
-
-        // creates RoomBooking form flow
-        internal static IDialog<RoomBooking> MakeRootDialog()
-        {
-            // note PromptInStart immediately starts the form flow
-            return Chain.From(() => FormDialog.FromForm(RoomBooking.BuildForm));
-        }
-
-        
-        // after RoomBooking has finished
-        private async Task RoomBookingComplete(IDialogContext context, IAwaitable<RoomBooking> result)
-        {
-            RoomBooking booking = null;
-
-            try
+            if(result.TryFindEntity("id", out EntityRecommendation idEntityRecommnedation))
             {
-                booking = await result;
-            }
-            catch(OperationCanceledException)
-            {
-                await context.PostAsync("Booking cancelled");
-                return;
-            }
-
-            if(booking != null)
-            {
-                // TODO - search for conference room availability...
-                // as an example send a couple of possible rooms
-                var reply = context.MakeMessage();
-                List<Attachment> cards = new List<Attachment>();
-
-                var confRoomOne = new ThumbnailCard
-                {
-                    Title = "Focus",
-                    Subtitle = "9001 Building, D-Site, Derby",
-                    Text = "Seats 12 with projector, whiteboard, network access, and audio conferencing facilities",
-                    Buttons = new List<CardAction> { new CardAction(ActionTypes.PostBack, "Select", value: "Focus") },
-                    Images = new List<CardImage> { new CardImage("https://www.discountmagnet.com/media/Blog%20Post%20Images/clean-design-conference-room.jpg", 
-                                                   null, 
-                                                   new CardAction(ActionTypes.ShowImage, value: "https://www.discountmagnet.com/media/Blog%20Post%20Images/clean-design-conference-room.jpg")) }
-                };
-
-                var confRoomTwo = new ThumbnailCard
-                {
-                    Title = "Integrity",
-                    Subtitle = "9001 Building, D-Site, Derby",
-                    Text = "Seats 4 with projector, audio conferencing and network access facilities",
-                    Buttons = new List<CardAction> { new CardAction(ActionTypes.PostBack, "Select", value: "Integrity") },
-                    Images = new List<CardImage> { new CardImage("https://c1.staticflickr.com/8/7540/16011025026_224f07771c_b.jpg",
-                                                   null,
-                                                   new CardAction(ActionTypes.OpenUrl, value: "https://c1.staticflickr.com/8/7540/16011025026_224f07771c_b.jpg")) }
-                };
-
-                cards.Add(confRoomTwo.ToAttachment());
-                cards.Add(confRoomOne.ToAttachment());
-
-                reply.AttachmentLayout = AttachmentLayoutTypes.Carousel;
-                reply.Attachments = cards;
-
-                await context.PostAsync("I've found 2 possible rooms for you");
-                await context.PostAsync(reply);
-
-                //await context.PostAsync("Your Room Booking: " + booking.ToString());
-                context.Wait(MeetingRoomConfirmed);
+                int.TryParse(idEntityRecommnedation.Entity, out int id);
+                context.UserData.SetValue<int>("Id", id);
+                context.Call(new DuplicateDialog(), DialogResumeAfter);
             }
             else
             {
-                await context.PostAsync("Form returned empty response, booking cancelled");
+                // should really handle this better but the LUIS recogniser shouldn't fail on this
+                await context.PostAsync("Thankyou. This will help me provide better results");
             }
         }
 
-        private async Task MeetingRoomConfirmed(IDialogContext context, IAwaitable<IMessageActivity> result)
+
+        [LuisIntent("book")]
+        public async Task Book(IDialogContext context, LuisResult result)
         {
-            var message = await result;
-            await context.PostAsync($"{ message.Text } meeting room booked, thank you for using the booking room service");
-            context.Done("done");
+            await context.PostAsync("I can book conference rooms. This will be coming in my next release.");
+        }
+
+
+        [LuisIntent("who")]
+        public async Task Who(IDialogContext context, LuisResult result)
+        {
+            await context.PostAsync("I'm the Acrobot!");
+        }
+
+
+        [LuisIntent("feeling")]
+        public async Task Feeling(IDialogContext context, LuisResult result)
+        {
+            await context.PostAsync("I'm great, thanks for asking!");
         }
 
 
