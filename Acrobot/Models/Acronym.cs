@@ -17,6 +17,5 @@ namespace Acrobot.Models
         public int Id { get; set; }
         public string Acronym1 { get; set; }
         public string Definition { get; set; }
-        public Nullable<bool> Duplicate { get; set; }
     }
 }
