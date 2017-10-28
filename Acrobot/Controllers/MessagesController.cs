@@ -20,6 +20,11 @@ namespace Acrobot
         {
             if (activity.Type == ActivityTypes.Message)
             {
+                var connector = new ConnectorClient(new Uri(activity.ServiceUrl));
+                Activity isTypingReply = activity.CreateReply();
+                isTypingReply.Type = ActivityTypes.Typing;
+                await connector.Conversations.ReplyToActivityAsync(isTypingReply);
+
                 await Conversation.SendAsync(activity, () => new RootDialog());
             }
             else
@@ -56,7 +61,15 @@ namespace Acrobot
                         if(newMember.Id == message.Recipient.Id)
                         {
                             var welcome = message.CreateReply();
-                            welcome.Text = "Hello, I'm the Acrobot. Say Hi for an introduction or just type an acronym for me to find.";
+                            welcome.Text = "Ready to handle all of your acronym needs! \n\n" + 
+                                            "Try asking me: \n\n" +
+                                            "- What does EEC stand for? \n\n" +
+                                            "- What does ETOPS mean? \n\n" +
+                                            "- TLA stands for Three Letter Acronym \n\n" +
+                                            "- BRB = Be Right Back \n\n" +
+                                            "- If you're still unsure say Hi for a quick tutorial \n\n" +
+                                            "- Or just type anything, I'm ready to chat!";
+
                             client.Conversations.ReplyToActivityAsync(welcome);
                         }
                     }

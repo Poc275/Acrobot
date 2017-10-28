@@ -61,9 +61,29 @@ namespace Acrobot.Dialogs
             }
             else
             {
-                // TODO: Open a Google search for that acronym
-                await context.PostAsync("I'm sorry, I don't know what that means. " +
-                    "If you find out let me know with something like 'TLA means Three Letter Acronym'");
+                var reply = context.MakeMessage();
+                List<Attachment> cards = new List<Attachment>();
+
+                List<CardAction> cardButtons = new List<CardAction>();
+                CardAction googleButton = new CardAction()
+                {
+                    Type = ActionTypes.OpenUrl,
+                    Title = "Ask Google?",
+                    Value = "http://www.google.com/search?q=acronym " + acronym
+                };
+                cardButtons.Add(googleButton);
+
+                var card = new ThumbnailCard
+                {
+                    Title = "I'm sorry, I don't know what that acronym means 🙁",
+                    Text = "If you find out let me know with something like 'TLA means Three Letter Acronym'",
+                    Buttons = cardButtons
+                };
+
+                cards.Add(card.ToAttachment());
+                reply.Attachments = cards;
+
+                await context.PostAsync(reply);
             }
 
             context.Done("");

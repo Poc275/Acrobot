@@ -4,23 +4,35 @@
     <title>HCI Bot - Welcome</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="botchat.css" rel="stylesheet" />
 </head>
 <body style="font-family:'Segoe UI'">
-    <h1>HCI Bot</h1>
-    <p>Beginnings of the HCI bot. For now it's based on a simple user story of finding acronyms.
-    This is done through LUIS but you can also chat with the bot to see sentiment analysis in action.</p>
-    <p>
-    <p>Update: I can now book meeting rooms! 🎉</p>
-        Some example interactions:
-        <ul>
-            <li>What does EEC stand for?</li>
-            <li>What does ETOPS mean?</li>
-            <li>TLA = Three Letter Acronym</li>
-            <li>BRB stands for Be Right Back</li>
-            <li>Thanks for your help (sentiment analysis)</li>
-        </ul>
-    </p>
-    <iframe width="500" height="600"
-            src='https://webchat.botframework.com/embed/HCIBot?s=ylD9gKQZ-8E.cwA.vX0.iPoyZiUJ1zHy3u4WPDUpUehjwMxr0p5iBhd3NSkb13Y'></iframe>
+
+    <div id="bot"></div>
+
+    <script src="botchat.js"></script>
+    <script src="CognitiveServices.js"></script>
+    <script>
+        var speechOptions = {
+            speechRecognizer: new CognitiveServices.SpeechRecognizer({
+                subscriptionKey: 'a90b0b46d0d4473da453d8e2a7be2b08'
+            }),
+            speechSynthesizer: new CognitiveServices.SpeechSynthesizer({
+                subscriptionKey: 'a90b0b46d0d4473da453d8e2a7be2b08',
+                gender: CognitiveServices.SynthesisGender.Male,
+                voiceName: 'Microsoft Server Speech Text to Speech Voice (en-GB, George, Apollo)'
+            })
+        };
+
+        BotChat.App({
+            directLine: { secret: 'O96bSMgPN_4.cwA.4fk.Ur35SOVhijB1r_yGjtMcSO2VDabHtmlQImhe3PbM8uE' },
+            user: { id: 'You' },
+            bot: { id: 'Henry' },
+            resize: 'detect',
+            speechOptions: speechOptions,
+            sendTyping: false,
+            webSocket: false,
+        }, document.getElementById("bot"));
+    </script>
 </body>
 </html>

@@ -1,7 +1,9 @@
 ﻿using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Luis;
 using Microsoft.Bot.Builder.Luis.Models;
+using Microsoft.Bot.Connector;
 using Microsoft.ProjectOxford.Text.Sentiment;
 using System;
 using System.Collections.Generic;
@@ -25,16 +27,34 @@ namespace Acrobot.Dialogs
 
             if (sentimentScore < 0.4)
             {
-                await context.PostAsync($"Negative response. (Sentiment: { sentimentScore.ToString() })");
+                //await context.PostAsync($"Negative response. (Sentiment: { sentimentScore.ToString() })");
+                await context.PostAsync("😟 I'm sorry to hear that. Would you mind leaving me a short message telling me how I can improve?");
             }
             else if (sentimentScore < 0.6)
             {
-                await context.PostAsync($"Neutral response. (Sentiment: { sentimentScore.ToString() })");
+                await context.PostAsync("😐 It seems I wasn't of much use to you. Would you mind telling me why?");
             }
             else
             {
-                await context.PostAsync($"Positive response. (Sentiment: { sentimentScore.ToString() })");
+                await context.PostAsync("😎 I'm happy you think so! Would you mind leaving me a short message telling me what you enjoyed about my service?");
             }
+
+            context.Wait(GetFeedback);
+        }
+
+
+        // function that gets called with any user feedback
+        public async Task GetFeedback(IDialogContext context, IAwaitable<IMessageActivity> result)
+        {
+            TelemetryClient telemetry = new TelemetryClient();
+            var message = await result;
+
+            // add feedback to telemetry for collection/analysis later
+            var props = new Dictionary<string, string> { { "feedback", message.Text } };
+            telemetry.TrackEvent("Feedback", properties: props);
+
+            await context.PostAsync("Thanks for the feedback!");
+            context.Done("");
         }
 
 
@@ -49,9 +69,6 @@ namespace Acrobot.Dialogs
         public async Task Find(IDialogContext context, LuisResult result)
         {
             // add acronym to telemetry
-            // TelemetryClient is not Serializable but is in a class
-            // marked [Serializable] so it must be marked as [NonSerialized]
-            //[NonSerialized()]
             TelemetryClient telemetry = new TelemetryClient();
 
             // get the acronym entity
