@@ -4,20 +4,20 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="AcronymDBModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+    <Schema Namespace="AcronymDBModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="Acronyms">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
           <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="Acronym" Type="nvarchar" MaxLength="10" Nullable="false" />
-          <Property Name="Definition" Type="nvarchar" MaxLength="250" Nullable="false" />
+          <Property Name="Definition" Type="nvarchar" MaxLength="300" Nullable="false" />
+          <Property Name="Duplicate" Type="bit" />
         </EntityType>
         <EntityContainer Name="AcronymDBModelStoreContainer">
           <EntitySet Name="Acronyms" EntityType="Self.Acronyms" Schema="dbo" store:Type="Tables" />
         </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+      </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="AcronymDBModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -27,7 +27,8 @@
           </Key>
           <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="Acronym1" Type="String" MaxLength="10" FixedLength="false" Unicode="true" Nullable="false" />
-          <Property Name="Definition" Type="String" MaxLength="250" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Definition" Type="String" MaxLength="300" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Duplicate" Type="Boolean" />
         </EntityType>
         <EntityContainer Name="AcronymDBEntities" annotation:LazyLoadingEnabled="true">
           <EntitySet Name="Acronyms" EntityType="Self.Acronym" />
@@ -41,6 +42,7 @@
           <EntitySetMapping Name="Acronyms">
             <EntityTypeMapping TypeName="AcronymDBModel.Acronym">
               <MappingFragment StoreEntitySet="Acronyms">
+                <ScalarProperty Name="Duplicate" ColumnName="Duplicate" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="Acronym1" ColumnName="Acronym" />
                 <ScalarProperty Name="Definition" ColumnName="Definition" />
