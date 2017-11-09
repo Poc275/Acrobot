@@ -21,8 +21,8 @@ namespace Acrobot.Dialogs
         {
             var message = await result;
 
-            // check the user actually typed TLA
-            if (message.Text.Contains("TLA"))
+            // check the user actually typed TLA (or tla if spoken)
+            if (message.Text.Contains("TLA") || message.Text.Contains("tla"))
             {
                 await context.PostAsync("TLA stands for Three Letter Acronym 😏");
                 await context.PostAsync("You can also let me know what an acronym stands for. E.g. 'BRB stands for Be Right Back'");

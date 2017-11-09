@@ -1,12 +1,16 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>HCI Bot - Welcome</title>
+    <title>Acrobot</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--<link rel="apple-touch-icon-precomposed" href="img/icon.png" />-->
+    <link rel="apple-touch-icon" href="img/icon.png" />
+    <link rel="apple-touch-startup-image" href="img/splash.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <link href="botchat.css" rel="stylesheet" />
-</head>
-<body style="font-family:'Segoe UI'">
+</head><body style="font-family:'Segoe UI'">
 
     <div id="bot"></div>
 
@@ -30,7 +34,7 @@
             bot: { id: 'Henry' },
             resize: 'detect',
             speechOptions: speechOptions,
-            sendTyping: false,
+            sendTyping: true,
             webSocket: false,
         }, document.getElementById("bot"));
     </script>
