@@ -27,7 +27,6 @@ namespace Acrobot.Dialogs
 
             if (sentimentScore < 0.4)
             {
-                //await context.PostAsync($"Negative response. (Sentiment: { sentimentScore.ToString() })");
                 await context.PostAsync("😟 I'm sorry to hear that. Would you mind leaving me a short message telling me how I can improve?");
             }
             else if (sentimentScore < 0.6)
@@ -98,20 +97,41 @@ namespace Acrobot.Dialogs
         [LuisIntent("create")]
         public async Task Create(IDialogContext context, LuisResult result)
         {
-            // get entities
-            if (result.TryFindEntity("acronym", out EntityRecommendation acronymEntityRecommendation) && 
-                result.TryFindEntity("definition", out EntityRecommendation definitionEntityRecommendation))
+            // retrieve acronym & definition entities
+            result.TryFindEntity("acronym", out EntityRecommendation acronymEntity);
+            result.TryFindEntity("definition", out EntityRecommendation definitionEntity);
+
+            if (acronymEntity != null && definitionEntity != null)
             {
                 // assign entities to user data so the CreateDialog can access them
-                context.UserData.SetValue<string>("Acronym", acronymEntityRecommendation.Entity.ToUpper());
-                context.UserData.SetValue<string>("Definition", definitionEntityRecommendation.Entity);
+                context.UserData.SetValue<string>("Acronym", acronymEntity.Entity.ToUpper());
+                context.UserData.SetValue<string>("Definition", definitionEntity.Entity);
                 context.Call(new CreateDialog(), DialogResumeAfter);
+            }
+            else if (acronymEntity != null && definitionEntity == null)
+            {
+                // we have an acronym but not a definition, so someone has typed 
+                // something like "Define TLA" expecting to be prompted for a definition
+                context.UserData.SetValue<string>("Acronym", acronymEntity.Entity.ToUpper());
+
+                var definitionDialog = new PromptDialog.PromptString($"What is the definition of { acronymEntity.Entity.ToUpper() }?", 
+                                                                    "What was that sorry?", 
+                                                                    3);
+
+                context.Call(definitionDialog, DefinitionPromptResumeAfter);
             }
             else
             {
-                await context.PostAsync("I couldn't find the acronym or definition to create. " +
+                await context.PostAsync("I couldn't find the acronym you wanted to create. " +
                     "Try something like 'TLA stands for Three Letter Acronym'");
             }
+        }
+
+        private async Task DefinitionPromptResumeAfter(IDialogContext context, IAwaitable<string> result)
+        {
+            var definition = await result;
+            context.UserData.SetValue<string>("Definition", definition);
+            context.Call(new CreateDialog(), DialogResumeAfter);
         }
 
 
@@ -136,7 +156,7 @@ namespace Acrobot.Dialogs
         [LuisIntent("book")]
         public async Task Book(IDialogContext context, LuisResult result)
         {
-            await context.PostAsync("I can book conference rooms. This will be coming in my next release.");
+            await context.PostAsync("I can book conference rooms. This will be coming in my next release!");
         }
 
 
@@ -164,6 +184,7 @@ namespace Acrobot.Dialogs
         // and returns a score between 0 (negative) and 1 (positive)
         private async Task<float> GetSentiment(string sentence)
         {
+            TelemetryClient telemetryClient = new TelemetryClient();
             float sentiment = 0;
 
             try
@@ -185,7 +206,7 @@ namespace Acrobot.Dialogs
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                telemetryClient.TrackException(ex);
             }
 
             return sentiment;

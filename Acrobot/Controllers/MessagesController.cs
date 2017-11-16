@@ -61,7 +61,7 @@ namespace Acrobot
                         if(newMember.Id == message.Recipient.Id)
                         {
                             var welcome = message.CreateReply();
-                            welcome.Text = "Ready to handle all of your acronym needs! \n\n" + 
+                            welcome.Text = "Hi! I'm the Acrobot, ready to handle all of your acronym needs! \n\n" + 
                                             "Try asking me: \n\n" +
                                             "- What does EEC stand for? \n\n" +
                                             "- What does ETOPS mean? \n\n" +
