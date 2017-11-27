@@ -148,6 +148,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="addtohomescreen.css" />
+    <Content Include="addtohomescreen.min.js" />
     <Content Include="App_Data\AcronymDB.mdf" />
     <Content Include="App_Data\AcronymDB_log.ldf">
       <DependentUpon>AcronymDB.mdf</DependentUpon>

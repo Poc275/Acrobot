@@ -10,6 +10,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <link href="botchat.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="addtohomescreen.css">
+    <script src="addtohomescreen.min.js"></script>
 </head>
 <body style="font-family:'Segoe UI'">
 
@@ -38,6 +40,12 @@
             sendTyping: true,
             webSocket: false,
         }, document.getElementById("bot"));
+    </script>
+    <script>
+        addToHomescreen({
+            skipFirstVisit: true,
+            maxDisplayCount: 1
+        });
     </script>
 </body>
 </html>
