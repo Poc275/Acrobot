@@ -6,6 +6,7 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
 using Acrobot.Dialogs;
 using System;
+using System.Web;
 
 namespace Acrobot
 {
