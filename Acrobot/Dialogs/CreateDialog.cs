@@ -1,4 +1,5 @@
 ﻿using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Connector;
 using System;
 using System.Threading.Tasks;
 
@@ -12,11 +13,15 @@ namespace Acrobot.Dialogs
 
         public async Task StartAsync(IDialogContext context)
         {
-            context.UserData.TryGetValue<string>("Acronym", out acronym);
-            context.UserData.TryGetValue<string>("Definition", out definition);
+            context.Wait(MessageReceivedAsync);
+        }
 
-            // capitalise definition before adding
-            definition = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(definition);
+        async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> message)
+        {
+            var definitionMessage = await message;
+            string[] definitionString = definitionMessage.Text.Split('=');
+            acronym = definitionString[0];
+            definition = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(definitionString[1]);
 
             // let user confirm the definition before submitting
             string confirmationMsg = String.Format("Create definition for {0}: {1} ?", acronym, definition);

@@ -12,21 +12,24 @@ namespace Acrobot.Dialogs
     {
         public async Task StartAsync(IDialogContext context)
         {
-            List<Models.Acronym> results;
+            context.Wait(MessageReceivedAsync);
+        }
 
-            // get acronym the user is searching for
-            context.UserData.TryGetValue<string>("Acronym", out string acronym);
-            await context.PostAsync($"Searching for { acronym } ...");
+        async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> message)
+        {
+            List<Models.Acronym> results;
+            var acronym = await message;
+            await context.PostAsync($"Searching for { acronym.Text } ...");
 
             // query db for acronym definition
-            results = GetAcronymDefinition(acronym);
+            results = GetAcronymDefinition(acronym.Text);
 
-            if(results.Count == 1)
+            if (results.Count == 1)
             {
                 // single result - just return the definition
                 await context.PostAsync(results[0].Definition);
             }
-            else if(results.Count > 1)
+            else if (results.Count > 1)
             {
                 // multiple possibilities - send a carousel
                 var reply = context.MakeMessage();
@@ -45,7 +48,7 @@ namespace Acrobot.Dialogs
 
                     var card = new ThumbnailCard
                     {
-                        Title = acronym,
+                        Title = acronym.Text,
                         Text = acronymResult.Definition,
                         Buttons = cardButtons
                     };
@@ -56,7 +59,7 @@ namespace Acrobot.Dialogs
                 reply.AttachmentLayout = AttachmentLayoutTypes.Carousel;
                 reply.Attachments = cards;
 
-                await context.PostAsync($"{ acronym } could be one of either:");
+                await context.PostAsync($"{ acronym.Text } could be one of either:");
                 await context.PostAsync(reply);
             }
             else
@@ -69,7 +72,7 @@ namespace Acrobot.Dialogs
                 {
                     Type = ActionTypes.OpenUrl,
                     Title = "Ask Google?",
-                    Value = "http://www.google.com/search?q=acronym " + acronym
+                    Value = "http://www.google.com/search?q=acronym " + acronym.Text
                 };
                 cardButtons.Add(googleButton);
 

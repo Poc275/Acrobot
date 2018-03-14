@@ -1,12 +1,11 @@
-﻿using System.Net;
+﻿using Acrobot.Dialogs;
+using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Connector;
+using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
-using Microsoft.Bot.Builder.Dialogs;
-using Microsoft.Bot.Connector;
-using Acrobot.Dialogs;
-using System;
-using System.Web;
 
 namespace Acrobot
 {

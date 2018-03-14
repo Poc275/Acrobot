@@ -1,5 +1,4 @@
 ﻿using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Luis;
 using Microsoft.Bot.Builder.Luis.Models;
@@ -7,6 +6,7 @@ using Microsoft.Bot.Connector;
 using Microsoft.ProjectOxford.Text.Sentiment;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Acrobot.Dialogs
@@ -16,6 +16,8 @@ namespace Acrobot.Dialogs
     public class RootDialog : LuisDialog<object>
     {
         string cognitiveServicesKey = "beb52f8948964337abf9fbb920fd7773";
+        // must be a better way of doing this than a global
+        string partialDefinition;
 
         [LuisIntent("")]
         [LuisIntent("None")]
@@ -65,7 +67,7 @@ namespace Acrobot.Dialogs
 
 
         [LuisIntent("find")]
-        public async Task Find(IDialogContext context, LuisResult result)
+        public async Task Find(IDialogContext context, IAwaitable<IMessageActivity> message, LuisResult result)
         {
             // add acronym to telemetry
             TelemetryClient telemetry = new TelemetryClient();
@@ -81,9 +83,9 @@ namespace Acrobot.Dialogs
                 var props = new Dictionary<string, string> { { "acronym", acronymEntityRecommendation.Entity } };
                 telemetry.TrackEvent("FindAcronym", properties: props);
 
-                // assign acronym to user data so the AcronymDialog can access it
-                context.UserData.SetValue<string>("Acronym", acronymEntityRecommendation.Entity.ToUpper());
-                context.Call(new AcronymDialog(), DialogResumeAfter);
+                var acronym = await message;
+                acronym.Text = acronymEntityRecommendation.Entity.ToUpper();
+                await context.Forward(new AcronymDialog(), DialogResumeAfter, acronym, CancellationToken.None);
             }
             else
             {
@@ -95,7 +97,7 @@ namespace Acrobot.Dialogs
 
 
         [LuisIntent("create")]
-        public async Task Create(IDialogContext context, LuisResult result)
+        public async Task Create(IDialogContext context, IAwaitable<IMessageActivity> message, LuisResult result)
         {
             // retrieve acronym & definition entities
             result.TryFindEntity("acronym", out EntityRecommendation acronymEntity);
@@ -103,16 +105,15 @@ namespace Acrobot.Dialogs
 
             if (acronymEntity != null && definitionEntity != null)
             {
-                // assign entities to user data so the CreateDialog can access them
-                context.UserData.SetValue<string>("Acronym", acronymEntity.Entity.ToUpper());
-                context.UserData.SetValue<string>("Definition", definitionEntity.Entity);
-                context.Call(new CreateDialog(), DialogResumeAfter);
+                var definition = await message;
+                definition.Text = acronymEntity.Entity.ToUpper() + "=" + definitionEntity.Entity;
+                await context.Forward(new CreateDialog(), DialogResumeAfter, definition, CancellationToken.None);
             }
             else if (acronymEntity != null && definitionEntity == null)
             {
                 // we have an acronym but not a definition, so someone has typed 
                 // something like "Define TLA" expecting to be prompted for a definition
-                context.UserData.SetValue<string>("Acronym", acronymEntity.Entity.ToUpper());
+                partialDefinition = acronymEntity.Entity.ToUpper();
 
                 var definitionDialog = new PromptDialog.PromptString($"What is the definition of { acronymEntity.Entity.ToUpper() }?", 
                                                                     "What was that sorry?", 
@@ -130,24 +131,28 @@ namespace Acrobot.Dialogs
         private async Task DefinitionPromptResumeAfter(IDialogContext context, IAwaitable<string> result)
         {
             var definition = await result;
-            context.UserData.SetValue<string>("Definition", definition);
-            context.Call(new CreateDialog(), DialogResumeAfter);
+            IActivity activity = new Activity
+            (
+                text: partialDefinition + "=" + definition
+            );
+
+            await context.Forward(new CreateDialog(), DialogResumeAfter, activity, CancellationToken.None);
         }
 
 
         // Tag an acronym as duplicate
         [LuisIntent("duplicate")]
-        public async Task Duplicate(IDialogContext context, LuisResult result)
+        public async Task Duplicate(IDialogContext context, IAwaitable<IMessageActivity> message, LuisResult result)
         {
-            if(result.TryFindEntity("id", out EntityRecommendation idEntityRecommnedation))
+            if(result.TryFindEntity("id", out EntityRecommendation idEntityRecommendation))
             {
-                int.TryParse(idEntityRecommnedation.Entity, out int id);
-                context.UserData.SetValue<int>("Id", id);
-                context.Call(new DuplicateDialog(), DialogResumeAfter);
+                var duplicateMessage = await message;
+                duplicateMessage.Text = idEntityRecommendation.Entity;
+                await context.Forward(new DuplicateDialog(), DialogResumeAfter, duplicateMessage, CancellationToken.None);
             }
             else
             {
-                // should really handle this better but the LUIS recogniser shouldn't fail on this
+                // should really handle not finding a valid id but the LUIS recogniser shouldn't fail on this
                 await context.PostAsync("Thankyou. This will help me provide better results");
             }
         }
